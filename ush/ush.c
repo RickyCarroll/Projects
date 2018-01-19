@@ -50,7 +50,6 @@ main (void)
 	    buffer[len-1] = 0;
 
 	/* Run it ... */
-	printf("calling processline()");
       	processline(buffer);
 
     }
@@ -70,9 +69,7 @@ void processline (char *line)
     if (argc == 0){
       return;
     }
-    printf("count successful");
     char **argv = arg_parse(line, &argc);
-    printf("parse successful");
     /* Start a new process to do the job. */
     cpid = fork();
     if (cpid < 0) {
@@ -123,7 +120,7 @@ char** arg_parse(char *line, int *argcptr){
   char ** argv;
   argv = (char **) malloc (sizeof(char) * *argcptr);
   char *cpline = line;
-  char *temp;
+  char *temp = '\0';
   int count = 0;
   //duplicate line to cpline
   while (cpline != '\0'){
@@ -133,7 +130,6 @@ char** arg_parse(char *line, int *argcptr){
       cpline++;
     }
     *temp = cpline[0];
-    printf("%s", temp);
     *argv[count] = *temp;
     //printf("%s", argv[count]);
     //loop until the end of arg
@@ -143,7 +139,6 @@ char** arg_parse(char *line, int *argcptr){
     *cpline = '\0';
     count++;
   }
-  printf("%s", *argv);
   return argv;
 }
 
