@@ -24,6 +24,11 @@
 
 void processline (char *line);
 
+/* My functions */
+
+char** arg_parse(char *line, int *argcptr);
+int arg_count(char *line);
+
 /* Shell main */
 
 int
@@ -45,7 +50,8 @@ main (void)
 	    buffer[len-1] = 0;
 
 	/* Run it ... */
-	processline (buffer);
+	printf("calling processline()");
+      	processline(buffer);
 
     }
 
@@ -60,7 +66,13 @@ void processline (char *line)
 {
     pid_t  cpid;
     int    status;
-    
+    int argc = arg_count(line);
+    if (argc == 0){
+      return;
+    }
+    printf("count successful");
+    char **argv = arg_parse(line, &argc);
+    printf("parse successful");
     /* Start a new process to do the job. */
     cpid = fork();
     if (cpid < 0) {
@@ -72,11 +84,13 @@ void processline (char *line)
     /* Check for who we are! */
     if (cpid == 0) {
       /* We are the child! */
-      execlp (line, line, (char *)0);
       /* execlp reurned, wasn't successful */
+      execvp(argv[0], argv);
       perror ("exec");
       fclose(stdin);  // avoid a linux stdio bug
       exit (127);
+    }else{
+      //free(argv);
     }
     
     /* Have the parent wait for child to complete */
@@ -86,4 +100,50 @@ void processline (char *line)
     }
 }
 
+int arg_count(char *line){
+  char *cpline = line;
+  int argc = 0;
+  //loop until the end to find number of args
+  while (*cpline != '\0'){
+    //loop until first non-space char
+    while (*cpline == ' ' && *cpline != '\0'){
+      cpline++;
+    }
+    //loop until the end of arg
+    while (*cpline != ' ' && *cpline != '\0'){
+      cpline++;
+    }
+    //increment argcounter
+    argc++;
+  }
+  return argc;
+}
+
+char** arg_parse(char *line, int *argcptr){
+  char ** argv;
+  argv = (char **) malloc (sizeof(char) * *argcptr);
+  char *cpline = line;
+  char *temp;
+  int count = 0;
+  //duplicate line to cpline
+  while (cpline != '\0'){
+    //loop until first non-space char
+    printf("Starting to eliminate spaces");
+    while (*cpline == ' ' && *cpline != '\0'){
+      cpline++;
+    }
+    *temp = cpline[0];
+    printf("%s", temp);
+    *argv[count] = *temp;
+    //printf("%s", argv[count]);
+    //loop until the end of arg
+    while (*cpline != ' ' && *cpline != '\0'){
+      cpline++;
+    }
+    *cpline = '\0';
+    count++;
+  }
+  printf("%s", *argv);
+  return argv;
+}
 
