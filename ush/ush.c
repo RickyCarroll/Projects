@@ -117,27 +117,28 @@ int arg_count(char *line){
 }
 
 char** arg_parse(char *line, int *argcptr){
-  char ** argv;
+  char ** argv = {NULL};
   argv = (char **) malloc (sizeof(char) * *argcptr);
   char *cpline = line;
-  char *temp = '\0';
+  size_t size = strlen(line);
   int count = 0;
+  int ix = 0;
   //duplicate line to cpline
-  while (cpline != '\0'){
+  while (ix < size){
     //loop until first non-space char
-    printf("Starting to eliminate spaces");
-    while (*cpline == ' ' && *cpline != '\0'){
-      cpline++;
+    while (cpline[ix] == ' ' && cpline[ix] != '\0'){
+      ix++;
     }
-    *temp = cpline[0];
-    *argv[count] = *temp;
-    //printf("%s", argv[count]);
+    if (count < *argcptr){
+      argv[count] = &cpline[ix];
+      count++;
+    }
     //loop until the end of arg
-    while (*cpline != ' ' && *cpline != '\0'){
-      cpline++;
+    while (cpline[ix] != ' ' && cpline[ix] != '\0'){
+      ix++;
     }
-    *cpline = '\0';
-    count++;
+    cpline[ix] = '\0';
+    ix++;
   }
   return argv;
 }
