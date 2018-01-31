@@ -7,14 +7,12 @@
  *
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
+#include "defn.h"
 
 /* Constants */ 
 
@@ -65,11 +63,23 @@ void processline (char *line)
 {
     pid_t  cpid;
     int    status;
+    int    err = 0;
+    char   newline [LINELEN];
     int argc = arg_count(line);
     if (argc == 0){
       return;
     }
-    char **argv = arg_parse(line, &argc);
+    err = expand(line, newline, LINELEN);
+    if (err < 0){
+      perror("expand");
+      return;
+    }
+    char **argv;
+    if (err != 1){
+      argv = arg_parse(line, &argc);
+    } else{
+      argv = arg_parse(newline, &argc);
+    }
     /* Start a new process to do the job. */
     cpid = fork();
     if (cpid < 0) {
@@ -81,13 +91,13 @@ void processline (char *line)
     /* Check for who we are! */
     if (cpid == 0) {
       /* We are the child! */
-      /* execlp reurned, wasn't successful */
+      /* execvp returned, wasn't successful */
       execvp(argv[0], argv);
       perror ("exec");
       fclose(stdin);  // avoid a linux stdio bug
       exit (127);
     }else{
-      //free(argv);
+      free(argv);
     }
     
     /* Have the parent wait for child to complete */

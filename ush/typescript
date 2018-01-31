@@ -1,9 +1,0 @@
-Script started on Fri 19 Jan 2018 08:36:28 AM PST
-carrolr7@cf162-13:~/csci347_w18/ush$ gcc -Wall -o ush ush.c
-carrolr7@cf162-13:~/csci347_w18/ush$ ./ush
-% test 1 2 34 567
-Segmentation fault
-carrolr7@cf162-13:~/csci347_w18/ush$ exit
-exit
-
-Script done on Fri 19 Jan 2018 08:37:06 AM PST
