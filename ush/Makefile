@@ -8,7 +8,7 @@ ush.o: ush.c
 expand.o: expand.c
 	$(CC) $(CFLAGS) -c expand.c defn.h
 builtin.o: builtin.c
-	$(CC) $(CFLAGS) -c builtin.c
+	$(CC) $(CFLAGS) -c builtin.c defn.h
 
 clean:
 	$(RM) ush *.o *~ *.gch

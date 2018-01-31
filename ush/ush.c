@@ -6,7 +6,8 @@
  *   Modified January 8, 2017
  *
  */
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -21,9 +22,6 @@
 /* Prototypes */
 
 void processline (char *line);
-
-/* My functions */
-
 char** arg_parse(char *line, int *argcptr);
 int arg_count(char *line);
 
@@ -69,7 +67,7 @@ void processline (char *line)
     if (argc == 0){
       return;
     }
-    err = expand(line, newline, LINELEN);
+    err = rc_expand(line, newline, LINELEN);
     if (err < 0){
       perror("expand");
       return;
@@ -80,32 +78,38 @@ void processline (char *line)
     } else{
       argv = arg_parse(newline, &argc);
     }
-    /* Start a new process to do the job. */
-    cpid = fork();
-    if (cpid < 0) {
-      /* Fork wasn't successful */
-      perror ("fork");
+    err = rc_isbuiltin(argv, &argc);
+    if (err == 0){
+      //do builtin command
       return;
-    }
-    
-    /* Check for who we are! */
-    if (cpid == 0) {
-      /* We are the child! */
-      /* execvp returned, wasn't successful */
-      execvp(argv[0], argv);
-      perror ("exec");
-      fclose(stdin);  // avoid a linux stdio bug
-      exit (127);
     }else{
-      free(argv);
-    }
+      /* Start a new process to do the job. */
+      cpid = fork();
+      if (cpid < 0) {
+	/* Fork wasn't successful */
+	perror ("fork");
+	return;
+      }
     
-    /* Have the parent wait for child to complete */
-    if (wait (&status) < 0) {
-      /* Wait wasn't successful */
-      perror ("wait");
+      /* Check for who we are! */
+      if (cpid == 0) {
+	/* We are the child! */
+	/* execvp returned, wasn't successful */
+	execvp(argv[0], argv);
+	perror ("exec");
+	fclose(stdin);  // avoid a linux stdio bug
+	exit (127);
+      }else{
+	free(argv);
+      }
+    
+      /* Have the parent wait for child to complete */
+      if (wait (&status) < 0) {
+	/* Wait wasn't successful */
+	perror ("wait");
+      }
     }
-}
+  }
 
 int arg_count(char *line){
   char *cpline = line;
