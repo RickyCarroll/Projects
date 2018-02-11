@@ -19,12 +19,11 @@ int rc_expand (char *orig, char *new, int newsize){
   while (*orig != '\0'){
     //if find expand char
     if (*orig == '$'){
-      orig++;
       
       //look for following command char
       
       //If its '$$'
-      if (*orig == '$'){
+      if (*(orig+1) == '$'){
 	char spid[5];
 	pid_t pid = getpid();
 	sprintf(spid, "%d", pid);
@@ -37,7 +36,8 @@ int rc_expand (char *orig, char *new, int newsize){
 	}
       }
       //If its '${'
-      else if (*orig == '{'){
+      else if (*(orig+1) == '{'){
+	orig++;
 	orig++;
 	char* start = orig;
 	//loop to find '}' or EOS
@@ -65,7 +65,12 @@ int rc_expand (char *orig, char *new, int newsize){
 	*orig = '}';
 	orig++;
       }
-      
+      else{
+	//$ found but no significant char after
+	*new = *orig;
+	new++;
+	orig++;
+      }
     }else{
       //no special character, simple copy
       *new = *orig;

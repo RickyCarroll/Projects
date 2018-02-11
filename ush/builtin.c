@@ -5,46 +5,54 @@
 #include <errno.h>
 #include <stdio.h>
 
-int rc_isbuiltin(char **argv, int *argc){
-  /*  char *sexit = "exit";
+int rc_builtin(char **argv, int *argc){
+  char *sexit = "exit";
   char *senvset = "envset";
   char *senvunset = "envunset";
-  char *scd = "cd";*/
-    
-  char command = argv[0][0];
+  char *scd = "cd";
+  char *command = argv[0];
+  char first = argv[0][0];
   char fourth = argv[0][3];
 
-  switch(command){
+  switch(first){
   case 'e':
     switch(fourth){
     case 't':
       //exit
-      if (*argc == 1){
-	exit(0);
+      if (strcmp(command, sexit) == 0){
+        if (*argc == 0){
+	  exit(1);
+	}else{
+	  int status = atoi(argv[1]);
+	  exit(status);
+	}
       }
-      else {
-	int status = atoi(argv[1]);
-	exit(status);
-      }
+
+      break;
       
     case 's':
       //envset
-      setenv(argv[1], argv[2], 1);
-      return 0;
-      
+      if (strcmp(command, senvset) == 0){
+	setenv(argv[1], argv[2], 1);
+	return 0;
+      }
+      break;
     case 'u':
       //envunset
-      unsetenv(argv[1]);
-      return 0;
-      
+      if (strcmp(command, senvunset) == 0){
+	unsetenv(argv[1]);
+	return 0;
+      }
+      break;
     }
-    break;
   case 'c':
     //cd
-    if (chdir(argv[1]) < 0){
-      printf("cd: %s\n",strerror(errno));
+    if (strcmp(command, scd) == 0){
+      if (chdir(argv[1]) < 0){
+	printf("cd: %s\n",strerror(errno));
+      }
+      return 0;
     }
-    return 0;
   }
   
   return -1;

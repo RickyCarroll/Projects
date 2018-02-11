@@ -25,31 +25,55 @@ void processline (char *line);
 char** arg_parse(char *line, int *argcptr);
 int arg_count(char *line);
 
+/* Globals */
+
+int mainargc;
+char **mainargv;
+
 /* Shell main */
 
 int
-main (void)
+main (int mainargc, char **mainargv)
 {
     char   buffer [LINELEN];
     int    len;
+    int    cpound;
 
     while (1) {
-
+      if (mainargc == 1){
         /* prompt and get line */
 	fprintf (stderr, "%% ");
 	if (fgets (buffer, LINELEN, stdin) != buffer)
 	  break;
-
+      }else if (mainargc > 1){
+	//read from file and put in buffer
+	printf("made it\n");
+	*buffer = "echo hello";
+      }
         /* Get rid of \n at end of buffer. */
 	len = strlen(buffer);
 	if (buffer[len-1] == '\n')
 	    buffer[len-1] = 0;
 
-	/* Run it ... */
-      	processline(buffer);
+	/* Get rid of comments */
+	//checks all but the first element
+	if (buffer[0] != '#'){
+	  cpound = 1;
+	  while (cpound < len){
+	    if (buffer[cpound] == '#'){
+	      if (buffer[cpound-1] != '$'){
+		buffer[cpound] = '\0';
+		break;
+	      }
+	    }
+	    cpound++;
+	  }
+	  /* Run it ... */
+	  processline(buffer);
+	}
 
     }
-
+    
     if (!feof(stdin))
         perror ("read");
 
@@ -78,9 +102,9 @@ void processline (char *line)
     } else{
       argv = arg_parse(newline, &argc);
     }
-    err = rc_isbuiltin(argv, &argc);
+    err = rc_builtin(argv, &argc);
     if (err == 0){
-      //do builtin command
+      //done builtin command
       return;
     }else{
       /* Start a new process to do the job. */
@@ -95,8 +119,8 @@ void processline (char *line)
       if (cpid == 0) {
 	/* We are the child! */
 	/* execvp returned, wasn't successful */
-	execvp(argv[0], argv);
-	perror ("exec");
+	err = execvp(argv[0], argv);
+	printf("exec: error\n");
 	fclose(stdin);  // avoid a linux stdio bug
 	exit (127);
       }else{
