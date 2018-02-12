@@ -5,11 +5,13 @@
 #include <errno.h>
 #include <stdio.h>
 
+const char *sexit =     "exit";
+const char *senvset =   "envset";
+const char *senvunset = "envunset";
+const char *scd =       "cd";
+
+
 int rc_builtin(char **argv, int *argc){
-  char *sexit = "exit";
-  char *senvset = "envset";
-  char *senvunset = "envunset";
-  char *scd = "cd";
   char *command = argv[0];
   char first = argv[0][0];
   char fourth = argv[0][3];
@@ -20,7 +22,7 @@ int rc_builtin(char **argv, int *argc){
     case 't':
       //exit
       if (strcmp(command, sexit) == 0){
-        if (*argc == 0){
+        if (*argc == 1){
 	  exit(1);
 	}else{
 	  int status = atoi(argv[1]);

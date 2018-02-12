@@ -38,17 +38,29 @@ main (int mainargc, char **mainargv)
     char   buffer [LINELEN];
     int    len;
     int    cpound;
-
+    char   *mode = "r";
+    FILE *file = fopen(mainargv[1], mode);
+    // printf("mainargc: %d\n", mainargc);
+    
+    if (mainargc > 1){
+      if (file == NULL){
+	perror("Could not open file");
+	exit(127);
+      }
+    }
+    
     while (1) {
       if (mainargc == 1){
         /* prompt and get line */
 	fprintf (stderr, "%% ");
 	if (fgets (buffer, LINELEN, stdin) != buffer)
 	  break;
-      }else if (mainargc > 1){
-	//read from file and put in buffer
-	printf("made it\n");
-	*buffer = "echo hello";
+      }else{
+	fgets(buffer, LINELEN, file);
+      }	
+      if (feof(file)){
+	fclose(file);
+        exit(0);
       }
         /* Get rid of \n at end of buffer. */
 	len = strlen(buffer);
@@ -156,7 +168,7 @@ int arg_count(char *line){
 
 char** arg_parse(char *line, int *argcptr){
   char ** argv = {NULL};
-  argv = (char **) malloc (sizeof(char) * *argcptr);
+  argv = (char **) malloc (sizeof(char *) * ((*argcptr) + 1));
   char *cpline = line;
   size_t size = strlen(line);
   int count = 0;

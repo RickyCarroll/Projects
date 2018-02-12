@@ -2,16 +2,12 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "defn.h"
 
-int rc_copy (char *from, int fix, char *to, int tix){
-  while (from[fix] != '\0'){
-    to[tix] = from[fix];
-    tix++;
-    fix++;
-  }
-  return 0;
-}
+/* GLOBALS */
+extern int mainargc;
+extern char **mainargv;
 
 int rc_expand (char *orig, char *new, int newsize){
   int ix = 0;
@@ -35,6 +31,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  ix++;
 	}
       }
+
       //If its '${'
       else if (*(orig+1) == '{'){
 	orig++;
@@ -65,6 +62,44 @@ int rc_expand (char *orig, char *new, int newsize){
 	*orig = '}';
 	orig++;
       }
+
+      //if its $n
+      else if (isdigit(*(orig+1)) > 0){
+	orig++;
+	int digit = *orig - '0';
+	while(isdigit(*(orig+1)) > 0){
+	  orig++;
+	  digit = (digit*10 + (*orig - '0'));
+	}
+	printf("This:%d\n", mainargc);
+
+        if (digit+1 < mainargc){
+	  char *arg = mainargv[digit+1];
+	  while (ix < newsize && *arg != '\0'){
+	  *new = *arg;
+	  new++;
+	  arg++;
+	  ix++;
+	  }
+	}else{
+	  orig++;
+	}
+      }
+
+      //if its $#
+      else if (*(orig+1) == '#'){
+	orig++;
+	char snum[5];
+	sprintf(snum, "%d", mainargc-1);
+	int index = 0;
+       	while (ix < newsize && snum[index] != '\0'){
+	  *new = snum[index];
+	  new++;
+	  index++;
+	  ix++;
+	}
+	orig++;
+      }
       else{
 	//$ found but no significant char after
 	*new = *orig;
@@ -72,7 +107,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	orig++;
       }
     }else{
-      //no special character, simple copy
+      //no $, simple copy
       *new = *orig;
       new++;
       orig++;
