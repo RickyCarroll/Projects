@@ -107,6 +107,33 @@ int rc_expand (char *orig, char *new, int newsize){
 	new++;
 	orig++;
       }
+
+      //check for * wildcard expansion
+      /*    }else if (*(orig+1) == '*'){
+      if (*orig == '\\' || *orig == ' '){
+	//just copy the *
+	orig++;
+	*new = *orig;
+	new++;
+	orig++;
+      }else if (*orig == ' '){
+	//leading wildcard
+	orig++;
+	orig++;
+	int offset = 1;
+	char keyword [256];
+	while(*(orig+offset) != '\0' || *(orig+offset) != ' '){
+	  if (offset != 256){
+	    *keyword = *(orig+offset);
+	    offset++;
+	    keyword++;
+	  }else{
+	    perror("wildcard: too big");
+	    return -1;
+	  }
+	}
+	DIR *dir = opendir(process.cwd());
+      */
     }else{
       //no $, simple copy
       *new = *orig;

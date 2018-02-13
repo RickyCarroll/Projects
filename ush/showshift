@@ -16,3 +16,5 @@ echo Argument 1 is $1.
 unshift
 echo Number of arguments is $#.
 echo Now $1 is Argument 1.
+shift 10
+unshift 10
