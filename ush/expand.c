@@ -6,8 +6,9 @@
 #include "defn.h"
 
 /* GLOBALS */
-extern int mainargc;
-extern char **mainargv;
+extern int gmainargc;
+extern char **gmainargv;
+extern int shift;
 
 int rc_expand (char *orig, char *new, int newsize){
   int ix = 0;
@@ -42,13 +43,13 @@ int rc_expand (char *orig, char *new, int newsize){
 	  orig++;
 	}
 	if (*orig == '\0'){
-	  printf("expand: missing brace\n");
+	  perror("expand: missing brace");
 	  return -1;
 	}
 	*orig = '\0';
 	char *env = getenv(start);
 	if (env == NULL){
-	  printf("expand: env not found\n");
+	  perror("expand: env not found");
 	  return -1;
 	}
 	//copies what is returned from getenv into new
@@ -62,6 +63,21 @@ int rc_expand (char *orig, char *new, int newsize){
 	*orig = '}';
 	orig++;
       }
+      
+      //if its $#
+      else if (*(orig+1) == '#'){
+	orig++;
+	char snum[5];
+	sprintf(snum, "%d", gmainargc-1-shift);
+	int index = 0;
+       	while (ix < newsize && snum[index] != '\0'){
+	  *new = snum[index];
+	  new++;
+	  index++;
+	  ix++;
+	}
+	orig++;
+      }
 
       //if its $n
       else if (isdigit(*(orig+1)) > 0){
@@ -71,34 +87,19 @@ int rc_expand (char *orig, char *new, int newsize){
 	  orig++;
 	  digit = (digit*10 + (*orig - '0'));
 	}
-	printf("This:%d\n", mainargc);
 
-        if (digit+1 < mainargc){
-	  char *arg = mainargv[digit+1];
+        if (digit + 1 + shift < gmainargc){
+	  char *arg = gmainargv[digit+1+shift];
 	  while (ix < newsize && *arg != '\0'){
-	  *new = *arg;
-	  new++;
-	  arg++;
-	  ix++;
+	    *new = *arg;
+	    new++;
+	    arg++;
+	    ix++;
 	  }
+	  orig++;
 	}else{
 	  orig++;
 	}
-      }
-
-      //if its $#
-      else if (*(orig+1) == '#'){
-	orig++;
-	char snum[5];
-	sprintf(snum, "%d", mainargc-1);
-	int index = 0;
-       	while (ix < newsize && snum[index] != '\0'){
-	  *new = snum[index];
-	  new++;
-	  index++;
-	  ix++;
-	}
-	orig++;
       }
       else{
 	//$ found but no significant char after

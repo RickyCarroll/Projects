@@ -27,8 +27,8 @@ int arg_count(char *line);
 
 /* Globals */
 
-int mainargc;
-char **mainargv;
+int gmainargc = 0;
+char **gmainargv = NULL;
 
 /* Shell main */
 
@@ -40,6 +40,8 @@ main (int mainargc, char **mainargv)
     int    cpound;
     char   *mode = "r";
     FILE *file = fopen(mainargv[1], mode);
+    gmainargc = mainargc;
+    gmainargv = mainargv;
     // printf("mainargc: %d\n", mainargc);
     
     if (mainargc > 1){
@@ -55,13 +57,13 @@ main (int mainargc, char **mainargv)
 	fprintf (stderr, "%% ");
 	if (fgets (buffer, LINELEN, stdin) != buffer)
 	  break;
+      }else if (feof(file)){
+	fclose(file);
+        exit(0);
       }else{
 	fgets(buffer, LINELEN, file);
       }	
-      if (feof(file)){
-	fclose(file);
-        exit(0);
-      }
+
         /* Get rid of \n at end of buffer. */
 	len = strlen(buffer);
 	if (buffer[len-1] == '\n')
@@ -109,11 +111,8 @@ void processline (char *line)
       return;
     }
     char **argv;
-    if (err != 1){
-      argv = arg_parse(line, &argc);
-    } else{
-      argv = arg_parse(newline, &argc);
-    }
+    argv = arg_parse(newline, &argc);
+    
     err = rc_builtin(argv, &argc);
     if (err == 0){
       //done builtin command

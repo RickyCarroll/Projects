@@ -5,10 +5,16 @@
 #include <errno.h>
 #include <stdio.h>
 
+/* Globals */
+extern int gmainargc;
+int shift = 0;
+
 const char *sexit =     "exit";
 const char *senvset =   "envset";
 const char *senvunset = "envunset";
 const char *scd =       "cd";
+const char *sshift =    "shift";
+const char *sunshift =  "unshift";
 
 
 int rc_builtin(char **argv, int *argc){
@@ -55,7 +61,41 @@ int rc_builtin(char **argv, int *argc){
       }
       return 0;
     }
+    break;
+
+  case 's':
+    //shift
+    if (strcmp(command, sshift) == 0){
+      if (*argc == 1){
+	shift++;
+      }else {
+	int temp = atoi(argv[1]);
+	if (shift + temp > gmainargc){
+	  perror("shift: shift too large");
+	}else{
+	  shift += temp;
+	}
+      }
+    return 0;
+    }
+    break;
+    
+  case 'u':
+    //unshift
+    if (strcmp(command, sunshift) == 0){
+      if (*argc == 1){
+	shift = 0;
+      }else {
+	int temp = atoi(argv[1]);
+	if (shift - temp < 0){
+	  perror("unshift: shift too large");
+	}else{
+	  shift -= temp;
+	}
+      }
+      return 0;
+    }
+    break;
   }
-  
   return -1;
 }
