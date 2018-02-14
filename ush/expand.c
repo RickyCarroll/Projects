@@ -14,6 +14,7 @@ extern int shift;
 
 int rc_expand (char *orig, char *new, int newsize){
   int ix = 0;
+  char *start = new;
   //loop through orig until find EOS
   while (*orig != '\0'){
     //if find expand char
@@ -109,6 +110,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	*new = *orig;
 	new++;
 	orig++;
+	ix++;
       }
       
       //check for * wildcard expansion
@@ -121,25 +123,28 @@ int rc_expand (char *orig, char *new, int newsize){
 	orig++;
       }else if (*orig == ' '){
 	//leading wildcard
+	*new = *orig;
+	new++;
+	ix++;
 	orig++;
 	orig++;
-	int offset = 0;
-	char *context = {NULL};
+	int offset = 1;
+	char context [256];
+	context[0] = '*';
 	while(*(orig+offset) != '\0'){
 	  if (offset != 256){
 	    if (*(orig+offset) == '/'){
 	      perror("context characters include a '/'");
 	      return -1;
 	    }
-	    *context = *(orig+offset);
+	    context[offset] = *(orig+offset);
 	    offset++;
-	    context++;
 	  }else{
 	    perror("wildcard: too big");
 	    return -1;
 	  }
 	}
-	if (offset > 0) {
+	if (offset > 1) {
 	  *context = '\0';
 	}
 	/*	int i = 0;
@@ -160,28 +165,42 @@ int rc_expand (char *orig, char *new, int newsize){
 	if (dir == NULL){
 	  perror("opendir");
 	}
-	
 	while ((entry = readdir(dir)) != NULL){
 	  char *filename = entry->d_name;
 	  if (filename[0] != '.'){
-	    if (offset > 0) {
-	      if (fnmatch(context, filename, 0 )== 0){
-		fprintf(stderr, "%s ", filename);
+	    if (offset > 1) {
+	      if (fnmatch(context, filename, 0)== 0){
+		*new = ' ';
+		new++;
+		ix++;
+		while (ix < newsize && *filename != '\0'){
+		  *new = *filename;
+		  ix++;
+		  new++;
+		  filename++;
+		}
 	      }
 	    }else{
-	      fprintf(stderr, "%s ", filename);
+	      *new = ' ';
+	      new++;
+	      ix++;
+	      while (ix < newsize && *filename != '\0'){
+		*new = *filename;
+	        ix++;
+		new++;
+		filename++;
+	      }
 	    }
 	  }
 	}
 	closedir(dir);
-	//fclose(stdout);
-	
       }
     }else{
       //no $ | * so simple copy
       *new = *orig;
       new++;
       orig++;
+      ix++;
     }
   } 
   *new = '\0';

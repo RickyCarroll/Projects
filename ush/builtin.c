@@ -22,6 +22,8 @@ const char *sshift    = "shift";
 const char *sunshift  = "unshift";
 const char *ssstat    = "sstat";
 
+void print_perms(int mode);
+
 
 int rc_builtin(char **argv, int *argc){
   char *command = argv[0];
@@ -99,21 +101,30 @@ int rc_builtin(char **argv, int *argc){
 	//loop through all args (filenames)
 	while (c < *argc){
 	  if (stat(argv[c], &statbuf) == 0){
-	    fprintf(stderr, "%s ", argv[c]); //print filename
+	    
+	    printf("%s ", argv[c]); //print filename
+	    
 	    if ((pwd = getpwuid(statbuf.st_uid)) != NULL){
-	      fprintf(stderr, "%s ", pwd->pw_name); //print user name
+	      printf("%s ", pwd->pw_name); //print user name
 	    }else{
-	      fprintf(stderr, "%ld ", (long)statbuf.st_uid); //print uid
+	      printf("%ld ", (long)statbuf.st_uid); //print uid
 	    }
+	    
 	    if ((grp = getgrgid(statbuf.st_gid)) != NULL){
-	      fprintf(stderr, "%s ", grp->gr_name); //print group name
+	      printf("%s ", grp->gr_name); //print group name
 	    }else{
-	      fprintf(stderr, "%ld ", (long)statbuf.st_gid); //print gid
+	      printf("%ld ", (long)statbuf.st_gid); //print gid
 	    }
-	    fprintf(stderr, "%lo ", (unsigned long)statbuf.st_mode); //print permission list **
-	    fprintf(stderr, "%ld ", (long)statbuf.st_nlink); //print number of links
-	    fprintf(stderr, "%lld ", (long long)statbuf.st_size); //print size in bytes
-	    fprintf(stderr, "%s ", asctime(localtime(&statbuf.st_mtime))); //print time localtime asctime
+	    
+	    int mode = statbuf.st_mode;
+	    print_perms(mode); //print permission list
+	    
+	    printf("%ld ", (long)statbuf.st_nlink); //print number of links
+	    
+	    printf("%lld ", (long long)statbuf.st_size); //print size in bytes
+	    
+	    printf("%s", asctime(localtime(&statbuf.st_mtime))); //print time localtime asctime
+	    
 	    c++;
 	  }else{
 	    perror("stat");
@@ -143,4 +154,65 @@ int rc_builtin(char **argv, int *argc){
     break;
   }
   return -1;
+}
+
+void print_perms(int mode){
+  printf("-");
+  /* Check owner permissions */
+  if ((mode & S_IRUSR) && (mode & S_IREAD)){
+    printf("r");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IWUSR) && (mode & S_IWRITE)) {
+    printf("w");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IXUSR) && (mode & S_IEXEC)){
+    printf("x");
+  }
+  else{
+    printf("-");
+  }
+  /* Check group permissions */
+  if ((mode & S_IRGRP) && (mode & S_IREAD)){
+    printf("r");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IWGRP) && (mode & S_IWRITE)){
+    printf("w");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IXGRP) && (mode & S_IEXEC)){
+    printf("x");
+  }
+  else{
+    printf("-");
+  }
+  /* check other user permissions */
+  if ((mode & S_IROTH) && (mode & S_IREAD)){
+    printf("r");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IWOTH) && (mode & S_IWRITE)){
+    printf("w");
+  }
+  else{
+    printf("-");
+  }
+  if ((mode & S_IXOTH) && (mode & S_IEXEC)){
+    printf("x ");
+  }
+  else{
+    printf("- ");
+  }
 }
