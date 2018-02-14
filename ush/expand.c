@@ -3,6 +3,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <dirent.h>
+#include <fnmatch.h>
 #include "defn.h"
 
 /* GLOBALS */
@@ -32,7 +34,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  ix++;
 	}
       }
-
+      
       //If its '${'
       else if (*(orig+1) == '{'){
 	orig++;
@@ -59,7 +61,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  env++;
 	  ix++;
 	}
-
+	
 	*orig = '}';
 	orig++;
       }
@@ -78,7 +80,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	}
 	orig++;
       }
-
+      
       //if its $n
       else if (isdigit(*(orig+1)) > 0){
 	orig++;
@@ -87,7 +89,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  orig++;
 	  digit = (digit*10 + (*orig - '0'));
 	}
-
+	
         if (digit + 1 + shift < gmainargc){
 	  char *arg = gmainargv[digit+1+shift];
 	  while (ix < newsize && *arg != '\0'){
@@ -101,16 +103,17 @@ int rc_expand (char *orig, char *new, int newsize){
 	  orig++;
 	}
       }
+      
       else{
 	//$ found but no significant char after
 	*new = *orig;
 	new++;
 	orig++;
       }
-
+      
       //check for * wildcard expansion
-      /*    }else if (*(orig+1) == '*'){
-      if (*orig == '\\' || *orig == ' '){
+    }else if (*(orig+1) == '*'){
+      if (*orig == '\\'){
 	//just copy the *
 	orig++;
 	*new = *orig;
@@ -120,27 +123,68 @@ int rc_expand (char *orig, char *new, int newsize){
 	//leading wildcard
 	orig++;
 	orig++;
-	int offset = 1;
-	char keyword [256];
-	while(*(orig+offset) != '\0' || *(orig+offset) != ' '){
+	int offset = 0;
+	char *context = {NULL};
+	while(*(orig+offset) != '\0'){
 	  if (offset != 256){
-	    *keyword = *(orig+offset);
+	    if (*(orig+offset) == '/'){
+	      perror("context characters include a '/'");
+	      return -1;
+	    }
+	    *context = *(orig+offset);
 	    offset++;
-	    keyword++;
+	    context++;
 	  }else{
 	    perror("wildcard: too big");
 	    return -1;
 	  }
 	}
-	DIR *dir = opendir(process.cwd());
-      */
+	if (offset > 0) {
+	  *context = '\0';
+	}
+	/*	int i = 0;
+	char *newcontext;
+	while (context[i] != '\0'){
+	  *newcontext = context[i];
+	  i++;
+	  }8*/
+	char buf [256];
+	struct dirent *entry;
+	//check if null
+	char *cwd = getcwd(buf, 256);
+	  if (cwd == NULL){
+	  perror("getcwd");
+	  }
+	//check if null
+	DIR *dir = opendir(cwd);
+	if (dir == NULL){
+	  perror("opendir");
+	}
+	
+	while ((entry = readdir(dir)) != NULL){
+	  char *filename = entry->d_name;
+	  if (filename[0] != '.'){
+	    if (offset > 0) {
+	      if (fnmatch(context, filename, 0 )== 0){
+		fprintf(stderr, "%s ", filename);
+	      }
+	    }else{
+	      fprintf(stderr, "%s ", filename);
+	    }
+	  }
+	}
+	closedir(dir);
+	//fclose(stdout);
+	
+      }
     }else{
-      //no $, simple copy
+      //no $ | * so simple copy
       *new = *orig;
       new++;
       orig++;
     }
-  }
+  } 
   *new = '\0';
   return 1;
 }
+

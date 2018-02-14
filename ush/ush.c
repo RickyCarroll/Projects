@@ -42,7 +42,6 @@ main (int mainargc, char **mainargv)
     FILE *file = fopen(mainargv[1], mode);
     gmainargc = mainargc;
     gmainargv = mainargv;
-    // printf("mainargc: %d\n", mainargc);
     
     if (mainargc > 1){
       if (file == NULL){
