@@ -1,0 +1,138 @@
+Script started on Wed 14 Feb 2018 08:41:34 AM PST
+carrolr7@cf162-03:~/csci347_w18/ush$ cd /home/phil/public/csci347/testa3
+carrolr7@cf162-03:/home/phil/public/csci347/testa3$ ./try
+Cloning into 'csci347_w18'...
+remote: Counting objects: 114, done.[K
+remote: Compressing objects: 100% (83/83), done.[K
+
+Checking connectivity... done.
+Branch a3 set up to track remote branch a3 from origin.
+Switched to a new branch 'a3'
+Making REF
+gcc -g -Wall -c ush.c defn.h
+gcc -g -Wall -c expand.c defn.h
+[01m[Kexpand.c:[m[K In function ‘[01m[Krc_expand[m[K’:
+[01m[Kexpand.c:17:9:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kstart[m[K’ [-Wunused-variable]
+   char *start = new;
+[01;32m[K         ^[m[K
+gcc -g -Wall -c builtin.c defn.h
+gcc -g -Wall -o ush ush.o expand.o builtin.o
+
+CR to run tests:  
+Running ush
+
+Files REF and OUT differ
+Script output different!
+Diffs: 
+--- REF	2018-02-14 08:42:21.113031491 -0800
++++ OUT	2018-02-14 08:42:31.761030718 -0800
+@@ -1,26 +1,18 @@
+ 
+-This test script is run with 1 args, script is ./ush, should be interactive.
+-Testing args!
+-Script name is /home/phil/public/csci347/testa3/scr1.
+-There are 4 number of parameters.
+-Dollar 1 is 'with', 2 is 'some'.
+-'/home/phil/public/csci347/testa3/scr1' is the script name.
+-Testing args!
+-Script name is /home/phil/public/csci347/testa3/scr1.
+-There are 2 number of parameters.
+-Dollar 1 is 'with_one_arg', 2 is ''.
+-'/home/phil/public/csci347/testa3/scr1' is the script name.
++This test script is run with 0 args, script is , should be interactive.
++exec: error
++exec: error
+ Testing shift ...
+ Script name is /home/phil/public/csci347/testa3/scr2.
+ There are 11 number of parameters.
+ Dollar 1-4 is arg1, arg2, arg3, and arg4.
+-Shifting 1
++Shifting 1 arg1,
+ There are 10 number of parameters.
+ Dollar 1-4 is arg2, arg3, arg4, and arg5.
+-Shifting 2
++Shifting 2 arg2,
+ There are 8 number of parameters.
+ Dollar 1-4 is arg4, arg5, arg6, and arg7.
+-Shifting 4
++Shifting 4 arg4,
+ There are 4 number of parameters.
+ There are 5 number of parameters.
+ Dollar 1-2 is arg7 and arg8.
+@@ -30,26 +22,5 @@
+ Dollar 1-4 is arg1, arg2, arg3, and arg4.
+ There are 21 arguments.
+ Argument 13 is 'This_is_thirteen!'.
+-Tesing Wildcards and sstat ...
+-
+-1abc 2acc 3.h 3adc 4a?c a.c aaaaaaa.c b.c c..c d.cc e.b f.q
+-d.cc
+-a*
+-*a
+-1abc 2acc 3adc 4a?c a.c aaaaaaa.c b.c c..c d.cc
+-c..c
+-3.h
+-aaaaaaa.c
+-*.c
+-4a?c
+-a.c aaaaaaa.c
+-
+-Now for sstat
+-
+-d.cc carrolr7 grp.csci.Students -rw--w---x 1 0 Sun May  1 00:00:00 2005
+-f.q carrolr7 grp.csci.Students -rw--w---x 1 0 Sun May  1 00:00:00 2005
+-/home/phil/zzz.file 333 333 -rwx------ 1 0 Mon Oct 31 15:46:23 2011
+-a.c carrolr7 grp.csci.Students -rw--w---x 1 0 Sun May  1 00:00:00 2005
+-b.c carrolr7 grp.csci.Students -rw--w---x 1 0 Sun May  1 00:00:00 2005
+-d.cc carrolr7 grp.csci.Students -rw--w---x 1 0 Sun May  1 00:00:00 2005
+-Done with regular tests
++exec: error
++exec: error
+
+See Out file? y
+Out is: -------
+
+This test script is run with 0 args, script is , should be interactive.
+exec: error
+exec: error
+Testing shift ...
+Script name is /home/phil/public/csci347/testa3/scr2.
+There are 11 number of parameters.
+Dollar 1-4 is arg1, arg2, arg3, and arg4.
+Shifting 1 arg1,
+There are 10 number of parameters.
+Dollar 1-4 is arg2, arg3, arg4, and arg5.
+Shifting 2 arg2,
+There are 8 number of parameters.
+Dollar 1-4 is arg4, arg5, arg6, and arg7.
+Shifting 4 arg4,
+There are 4 number of parameters.
+There are 5 number of parameters.
+Dollar 1-2 is arg7 and arg8.
+There are 7 number of parameters.
+Dollar 1-4 is arg5, arg6, arg7, and arg8.
+There are 11 number of parameters.
+Dollar 1-4 is arg1, arg2, arg3, and arg4.
+There are 21 arguments.
+Argument 13 is 'This_is_thirteen!'.
+exec: error
+exec: error
+---------------
+Exit values correct
+
+----- ERRS -----
+% % % % % % % % % read: Success
+% % % read: Success
+% % % % % % 
+----------------
+
+Run error tests? y
+Testing errors with /home/phil/public/csci347/testa3/ush.err and 5 arguments (should be 5)
+Initial arguments are arg1, arg2, arg3, and arg4.
+Doing a shift of 4 (no error)
+We now have 1 argument, arg1 is ''.
+Doing a shift of 4 and 1 (should be errors)
+shift: shift too large: Success
+Now doing 'unshift 5' (should be an error)
+
+Script done on Wed 14 Feb 2018 08:43:07 AM PST

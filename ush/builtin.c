@@ -1,18 +1,10 @@
-#include "defn.h"
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdio.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
-#include <time.h>
+#include "builtin.h"
 
 /* Globals */
 extern int gmainargc;
+extern int status;
 int shift = 0;
+
 
 const char *sexit     = "exit";
 const char *senvset   = "envset";
@@ -37,9 +29,10 @@ int rc_builtin(char **argv, int *argc){
       //exit
       if (strcmp(command, sexit) == 0){
         if (*argc == 1){
-	  exit(1);
+	  status = 1;
+	  exit(status);
 	}else{
-	  int status = atoi(argv[1]);
+	  status = atoi(argv[1]);
 	  exit(status);
 	}
       }
@@ -49,14 +42,21 @@ int rc_builtin(char **argv, int *argc){
     case 's':
       //envset
       if (strcmp(command, senvset) == 0){
-	setenv(argv[1], argv[2], 1);
+	if (setenv(argv[1], argv[2], 1)){
+	  perror("setenv: ");
+	  return 1;
+	}
+	status = 0;
 	return 0;
       }
       break;
     case 'u':
       //envunset
       if (strcmp(command, senvunset) == 0){
-	unsetenv(argv[1]);
+	if (unsetenv(argv[1])){
+	  perror("unsetenv: ");
+	  return 1;
+	}
 	return 0;
       }
       break;
@@ -65,7 +65,8 @@ int rc_builtin(char **argv, int *argc){
     //cd
     if (strcmp(command, scd) == 0){
       if (chdir(argv[1]) < 0){
-	printf("cd: %s\n",strerror(errno));
+	perror("cd: ");
+	return 1;
       }
       return 0;
     }
@@ -83,6 +84,7 @@ int rc_builtin(char **argv, int *argc){
 	  int temp = atoi(argv[1]);
 	  if (shift + temp > gmainargc){
 	    perror("shift: shift too large");
+	    return 1;
 	  }else{
 	    shift += temp;
 	  }
@@ -127,8 +129,8 @@ int rc_builtin(char **argv, int *argc){
 	    
 	    c++;
 	  }else{
-	    perror("stat");
-	    return 0;
+	    perror("stat: ");
+	    return 1;
 	  }
 	}
 	return 0;
@@ -145,6 +147,7 @@ int rc_builtin(char **argv, int *argc){
 	int temp = atoi(argv[1]);
 	if (shift - temp < 0){
 	  perror("unshift: shift too large");
+	  return 1;
 	}else{
 	  shift -= temp;
 	}

@@ -1,4 +1,4 @@
-/* CS 352 -- Miro Shell!  
+/* CS 352 -- Micro Shell!  
  *
  *   Sept 21, 2000,  Phil Nelson
  *   Modified April 8, 2001 
@@ -6,14 +6,8 @@
  *   Modified January 8, 2017
  *
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include "defn.h"
+
+#include "ush.h"
 
 /* Constants */ 
 
@@ -29,6 +23,7 @@ int arg_count(char *line);
 
 int gmainargc = 0;
 char **gmainargv = NULL;
+int status;
 
 /* Shell main */
 
@@ -101,7 +96,6 @@ main (int mainargc, char **mainargv)
 void processline (char *line)
 {
   pid_t  cpid;
-  int    status;
   int    err = 0;
   char   newline [LINELEN];
   
@@ -120,7 +114,7 @@ void processline (char *line)
   
   err = rc_builtin(argv, &argc);
   if (err == 0){
-    //done builtin command
+    //successful builtin command
     return;
     
   }else{
@@ -138,6 +132,7 @@ void processline (char *line)
       /* execvp returned, wasn't successful */
       err = execvp(argv[0], argv);
       printf("exec: error\n");
+      free(argv);
       fclose(stdin);  // avoid a linux stdio bug
       exit (127);
     }else{

@@ -3,12 +3,15 @@ CFLAGS = -g -Wall
 
 ush: ush.o expand.o builtin.o
 	$(CC) $(CFLAGS) -o ush ush.o expand.o builtin.o
-ush.o: ush.c
-	$(CC) $(CFLAGS) -c ush.c defn.h
-expand.o: expand.c
-	$(CC) $(CFLAGS) -c expand.c defn.h
-builtin.o: builtin.c
-	$(CC) $(CFLAGS) -c builtin.c defn.h
+
+ush.o: ush.c defn.h ush.h
+	$(CC) $(CFLAGS) -c ush.c
+
+expand.o: expand.c defn.h expand.h
+	$(CC) $(CFLAGS) -c expand.c
+
+builtin.o: builtin.c builtin.h
+	$(CC) $(CFLAGS) -c builtin.c
 
 clean:
 	$(RM) ush *.o *~ *.gch

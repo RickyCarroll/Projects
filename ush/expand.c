@@ -1,20 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <fnmatch.h>
-#include "defn.h"
+#include "expand.h"
 
 /* GLOBALS */
 extern int gmainargc;
 extern char **gmainargv;
 extern int shift;
+extern int status;
 
 int rc_expand (char *orig, char *new, int newsize){
   int ix = 0;
-  char *start = new;
   //loop through orig until find EOS
   while (*orig != '\0'){
     //if find expand char
@@ -103,6 +96,55 @@ int rc_expand (char *orig, char *new, int newsize){
 	}else{
 	  orig++;
 	}
+      }
+
+      //if its $?
+      else if (*(orig+1) == '?'){
+	//int istatus = &status;
+	orig++;
+	
+	//if command was a builtin return 0 for success and 1 for failure
+	if (status == 0){
+	  *new = 0;
+	  new++;
+	  ix++;
+	  orig++;
+	}else if (status == 1){
+	  *new = 1;
+	  new++;
+	  ix++;
+	  orig++;
+	}
+	
+	//if the command called _exit(2), use the value passed to that function
+	if (WIFEXITED(status)){
+	  char snum[4];
+	  sprintf(snum, "%d", WEXITSTATUS(status));
+	  int index = 0;
+	  while (ix < newsize && snum[index] != '\0'){
+	    *new = snum[index];
+	    new++;
+	    index++;
+	    ix++;
+	  }
+	  orig++;
+	}
+	
+	//if the command was killed by a signal, use the number 128 plus the signal number
+	if (WIFSIGNALED(status)) {
+	  char snum[4];
+	  sprintf(snum, "%d", (WTERMSIG(status) + 128));
+	  int index = 0;
+	  while (ix < newsize && snum[index] != '\0'){
+	    *new = snum[index];
+	    new++;
+	    index++;
+	    ix++;
+	  }
+	  orig++;
+	}
+	
+	return 0;
       }
       
       else{
