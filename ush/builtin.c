@@ -16,6 +16,7 @@ const char *ssstat    = "sstat";
 
 void print_perms(int mode);
 
+void do_pipe (int fd[], char *buffer);
 
 int rc_builtin(char **argv, int *argc){
   char *command = argv[0];
@@ -83,7 +84,7 @@ int rc_builtin(char **argv, int *argc){
 	}else {
 	  int temp = atoi(argv[1]);
 	  if (shift + temp > gmainargc){
-	    perror("shift: shift too large");
+	    printf("shift: shift too large\n");
 	    return 1;
 	  }else{
 	    shift += temp;
@@ -146,7 +147,7 @@ int rc_builtin(char **argv, int *argc){
       }else {
 	int temp = atoi(argv[1]);
 	if (shift - temp < 0){
-	  perror("unshift: shift too large");
+	  printf("unshift: shift too large\n");
 	  return 1;
 	}else{
 	  shift -= temp;
@@ -219,3 +220,19 @@ void print_perms(int mode){
     printf("- ");
   }
 }
+
+
+void do_pipe(int fd[], char *buffer){
+  //create pipe
+  pipe(fd);
+
+  //write to stdin
+  write(fd[1], buffer, strlen(buffer));
+  
+  //read from stdout
+  int n;
+  while ((n = read(fd[0], buffer, strlen(buffer))) > 0);
+  close(fd[0]);
+  close(fd[1]);
+  return;
+  }

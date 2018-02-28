@@ -8,6 +8,7 @@ extern int status;
 
 int rc_expand (char *orig, char *new, int newsize){
   int ix = 0;
+  int flag = 1;
   //loop through orig until find EOS
   while (*orig != '\0'){
     //if find expand char
@@ -27,6 +28,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  index++;
 	  ix++;
 	}
+	flag = 0;
       }
       
       //If its '${'
@@ -39,13 +41,13 @@ int rc_expand (char *orig, char *new, int newsize){
 	  orig++;
 	}
 	if (*orig == '\0'){
-	  perror("expand: missing brace");
+	  printf("expand: missing brace\n");
 	  return -1;
 	}
 	*orig = '\0';
 	char *env = getenv(start);
 	if (env == NULL){
-	  perror("expand: env not found");
+	  printf("expand: env not found\n");
 	  return -1;
 	}
 	//copies what is returned from getenv into new
@@ -58,6 +60,43 @@ int rc_expand (char *orig, char *new, int newsize){
 	
 	*orig = '}';
 	orig++;
+	flag = 0;
+      }
+
+      //If its '$('
+      else if (*(orig+1) == '('){
+	orig++;
+	orig++;
+	char* start = orig;
+      	int pcount = 1;
+	orig--;
+	//loop to find ')' or EOS
+	while (pcount != 0 && *orig != '\0'){
+	  orig++;
+	  if (*orig == '(')
+	    pcount++;
+	  else if (*orig == ')')
+	    pcount--;
+	  else if (*orig == '\n')
+	    *orig = ' ';
+	}
+	if (*orig == '\0'){
+	  printf("expand: missing )\n");
+	  return -1;
+	}
+	*orig = '\0';
+
+	processline(start);
+	
+	/*	while (ix < newsize){
+	  *new;
+	  new++;
+	  ix++;
+	  }*/
+	
+	*orig = ')';
+	orig++;
+	flag = 0;
       }
       
       //if its $#
@@ -73,6 +112,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  ix++;
 	}
 	orig++;
+	flag = 0;
       }
       
       //if its $n
@@ -96,6 +136,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	}else{
 	  orig++;
 	}
+	flag = 0;
       }
 
       //if its $?
@@ -105,19 +146,19 @@ int rc_expand (char *orig, char *new, int newsize){
 	
 	//if command was a builtin return 0 for success and 1 for failure
 	if (status == 0){
-	  *new = 0;
+	  *new = '0';
 	  new++;
 	  ix++;
 	  orig++;
 	}else if (status == 1){
-	  *new = 1;
+	  *new = '1';
 	  new++;
 	  ix++;
 	  orig++;
 	}
 	
 	//if the command called _exit(2), use the value passed to that function
-	if (WIFEXITED(status)){
+	else if (WIFEXITED(status)){
 	  char snum[4];
 	  sprintf(snum, "%d", WEXITSTATUS(status));
 	  int index = 0;
@@ -128,10 +169,11 @@ int rc_expand (char *orig, char *new, int newsize){
 	    ix++;
 	  }
 	  orig++;
+	  flag = 0;
 	}
 	
 	//if the command was killed by a signal, use the number 128 plus the signal number
-	if (WIFSIGNALED(status)) {
+	else if (WIFSIGNALED(status)) {
 	  char snum[4];
 	  sprintf(snum, "%d", (WTERMSIG(status) + 128));
 	  int index = 0;
@@ -143,8 +185,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  }
 	  orig++;
 	}
-	
-	return 0;
+	flag = 0;
       }
       
       else{
@@ -189,23 +230,19 @@ int rc_expand (char *orig, char *new, int newsize){
 	if (offset > 1) {
 	  *context = '\0';
 	}
-	/*	int i = 0;
-	char *newcontext;
-	while (context[i] != '\0'){
-	  *newcontext = context[i];
-	  i++;
-	  }8*/
 	char buf [256];
 	struct dirent *entry;
 	//check if null
 	char *cwd = getcwd(buf, 256);
 	  if (cwd == NULL){
 	  perror("getcwd");
+	  return -1;
 	  }
 	//check if null
 	DIR *dir = opendir(cwd);
 	if (dir == NULL){
 	  perror("opendir");
+	  return -1;
 	}
 	while ((entry = readdir(dir)) != NULL){
 	  char *filename = entry->d_name;
@@ -236,6 +273,7 @@ int rc_expand (char *orig, char *new, int newsize){
 	  }
 	}
 	closedir(dir);
+	flag = 0;
       }
     }else{
       //no $ | * so simple copy
@@ -246,6 +284,7 @@ int rc_expand (char *orig, char *new, int newsize){
     }
   } 
   *new = '\0';
-  return 1;
+  //flag is 0 on success and 1 on no builtins used and -1 on builtin error
+  return flag;
 }
 

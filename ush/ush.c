@@ -11,7 +11,7 @@
 
 /* Constants */ 
 
-#define LINELEN 1024
+#define LINELEN 200000
 
 /* Prototypes */
 
@@ -34,7 +34,7 @@ main (int mainargc, char **mainargv)
   int    len;
   int    cpound;
   char   *mode = "r";
-  FILE *file;
+  FILE   *file;
   gmainargc = mainargc;
   gmainargv = mainargv;
   
@@ -112,11 +112,10 @@ void processline (char *line)
   
   char **argv = arg_parse(newline, &argc);
   
-  err = rc_builtin(argv, &argc);
-  if (err == 0){
-    //successful builtin command
+  status = rc_builtin(argv, &argc);
+  if (status >= 0){
+    //status will be 0 on successful, 1 on unsuccesful, -1 for no builtin
     return;
-    
   }else{
     /* Start a new process to do the job. */
     cpid = fork();
@@ -131,7 +130,7 @@ void processline (char *line)
       /* We are the child! */
       /* execvp returned, wasn't successful */
       err = execvp(argv[0], argv);
-      printf("exec: error\n");
+      perror("exec");
       free(argv);
       fclose(stdin);  // avoid a linux stdio bug
       exit (127);
@@ -143,6 +142,15 @@ void processline (char *line)
     if (wait (&status) < 0) {
       /* Wait wasn't successful */
       perror ("wait");
+    }
+    if (WIFSIGNALED(status)){
+      if (WTERMSIG(status) != 2){
+	if (WCOREDUMP(status)){
+	  printf("(core dumped)");
+	}else{
+	  printf("killed by signal %d\n", WTERMSIG(status));
+	}
+      }
     }
   }
 }
