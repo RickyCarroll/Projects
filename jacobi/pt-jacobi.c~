@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 /* Data array of size row and col has row+2 rows and
  * col+2 columns.  The extra rows/columns are the fixed
@@ -88,10 +89,23 @@ void print_data (double *ary, int row, int col, FILE *outF)
 
 void usage(char *prog)
 {
-  fprintf (stderr, "Usage: %s [-d] [-r rows] [-c columns] [-t tolerance]"
+  fprintf (stderr, "Usage: %s [-n num_threads] [-d] [-r rows] [-c columns] [-t tolerance]"
 	           " [-v initial_value] [output_file_name]\n", prog);
   fprintf (stderr, "  tolerance must be greater than zero.\n");
   exit(1);
+}
+
+int compute(double *current, double *next, int rows, int cols, double tolerance, int num_threads)
+{
+
+  
+  int num_iter = 0;
+    /* Compute loop */
+  while ( next_gen(current, next, rows, cols) > tolerance) {
+    swap (double *, current, next);
+    num_iter++;
+  }
+  return num_iter;
 }
 
 /* Main function
@@ -101,6 +115,7 @@ void usage(char *prog)
  *         -r rows  (default 256)
  *         -t tolerance (default 0.00001)
  *         -v initial value for row 0 (default 10)
+ *         -n number of threads (default 8)
  */
 
 int main (int argc, char ** argv)
@@ -114,9 +129,15 @@ int main (int argc, char ** argv)
   int    cols = 256;
   double tolerance = 0.00001;
   int    debug = 0;
+  int    num_threads = 8;
   
-  while ((ch = getopt(argc, argv, "c:dr:t:v:")) != -1) {
+  while ((ch = getopt(argc, argv, "n:c:dr:t:v:")) != -1) {
     switch (ch) {
+    case 'n':  /* number of threads  */
+      num_threads = atoi(optarg);
+      if (num_threads <= 0)
+	usage(argv[0]);
+      break;
     case 'c':  /* Columns */
       cols = atoi(optarg);
       if (cols <= 0)
@@ -172,8 +193,6 @@ int main (int argc, char ** argv)
   double *current = ary1;   /* array to initialize and start computation */
   double *next = ary2;      /* array for new data in computation step */
 
-  /* Looping control */
-  int num_iter = 0;
 
   /* Initialize */
   initialize (ary1, rows, cols, init_value);
@@ -185,12 +204,17 @@ int main (int argc, char ** argv)
     printf ("initial data is:\n");
     print_data (current, rows, cols, stdout);
   }
-
-  /* Compute loop */
-  while ( next_gen(current, next, rows, cols) > tolerance) {
-    swap (double *, current, next);
-    num_iter++;
+  int indexpthread = ((rows+2) * (cols+2)) / num_thread;
+  pthreads_t start[num_threads];
+  for (int i = 0; i < num_threads; i++){
+    start[i] = i * indexpthread;
   }
+  //Create threads running next gen and give them each a value 
+  for (int i = 0; i < num_threads; i++){
+    pthread_create(&tid[i], NULL, compute, (void *)(&start[i], ));
+  }
+  
+  int num_iter = compute(current, next, rows, cols, tolerance, num_threads)
 
   /* Report */
   printf ("Jacobi done, %d iterations, tolerance %.6f\n", num_iter, tolerance);

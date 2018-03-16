@@ -10,6 +10,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
+
+/* Globals */
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 
 /* Data array of size row and col has row+2 rows and
  * col+2 columns.  The extra rows/columns are the fixed
@@ -39,17 +46,25 @@ double next_gen ( double *current, double *next, int row, int col )
   
   int ix, iy;
 
-  for (ix = 1; ix <= row ; ix++) {
+  for (ix = 1; ix <= rows ; ix++) {
     /* Calculate all elements in the row. */
-    for (iy = 1; iy <= col; iy++) {
+    if (ix != args -> rowstart)
+      colstart = 0;
+    for (iy = colstart; iy <= cols; iy++) {
       /* Calculate new value for location (ix,iy) */
       next[idx(ix, iy, col)] = (current[idx(ix-1, iy, col)]
 				+ current[idx(ix+1, iy, col)]
 				+ current[idx(ix, iy-1, col)]
 				+ current[idx(ix, iy+1, col)]) / 4.0;
-      diff = fmax(diff, fabs(current[idx(ix, iy, col)]-next[idx(ix, iy, col)]));
+      if (pthread_mutex_lock(&mutex))
+	printf("error");
+      else
+	diff = fmax(diff, fabs(current[idx(ix, iy, col)]-next[idx(ix, iy, col)]));
+      if (pthread_mutex_unlock(&mutex))
+	printf("error");
     }
   }
+  pthread_join(tid, NULL)
   return diff;
 }
 
@@ -88,10 +103,32 @@ void print_data (double *ary, int row, int col, FILE *outF)
 
 void usage(char *prog)
 {
-  fprintf (stderr, "Usage: %s [-d] [-r rows] [-c columns] [-t tolerance]"
+  fprintf (stderr, "Usage: %s [-n num_threads] [-d] [-r rows] [-c columns] [-t tolerance]"
 	           " [-v initial_value] [output_file_name]\n", prog);
   fprintf (stderr, "  tolerance must be greater than zero.\n");
   exit(1);
+}
+
+void report (void *args)
+{
+  printf ("Jacobi done, %d iterations, tolerance %.6f\n", args -> num_iter, args -> tolerance);
+  if (args -> outF != stdout) {
+    fprintf (args -> outF, "%d %d\n", args -> rows, args -> cols);
+  }
+  print_data(args -> next, args -> rows, args -> cols, args -> outF);
+}
+
+void compute(void *args)
+{
+  int num_iter = 0;
+  int newtolerance = 1;
+    /* Compute loop */
+  while (newtolerance > args -> tolerance) {
+    newtolerance = next_gen(args -> current, args -> next, args -> row, args -> col);
+    swap (double *, args -> current, args -> next);
+    num_iter++;
+  }
+  report(void *args);
 }
 
 /* Main function
@@ -101,6 +138,7 @@ void usage(char *prog)
  *         -r rows  (default 256)
  *         -t tolerance (default 0.00001)
  *         -v initial value for row 0 (default 10)
+ *         -n number of threads (default 8)
  */
 
 int main (int argc, char ** argv)
@@ -110,13 +148,19 @@ int main (int argc, char ** argv)
 
   /* option data */
   double init_value = 10.0;
-  int    rows = 256;
-  int    cols = 256;
+  static int    rows = 256;
+  static int    cols = 256;
   double tolerance = 0.00001;
   int    debug = 0;
+  int    num_threads = 8;
   
-  while ((ch = getopt(argc, argv, "c:dr:t:v:")) != -1) {
+  while ((ch = getopt(argc, argv, "n:c:dr:t:v:")) != -1) {
     switch (ch) {
+    case 'n':  /* number of threads  */
+      num_threads = atoi(optarg);
+      if (num_threads <= 0)
+	usage(argv[0]);
+      break;
     case 'c':  /* Columns */
       cols = atoi(optarg);
       if (cols <= 0)
@@ -172,8 +216,6 @@ int main (int argc, char ** argv)
   double *current = ary1;   /* array to initialize and start computation */
   double *next = ary2;      /* array for new data in computation step */
 
-  /* Looping control */
-  int num_iter = 0;
 
   /* Initialize */
   initialize (ary1, rows, cols, init_value);
@@ -186,18 +228,39 @@ int main (int argc, char ** argv)
     print_data (current, rows, cols, stdout);
   }
 
-  /* Compute loop */
-  while ( next_gen(current, next, rows, cols) > tolerance) {
-    swap (double *, current, next);
-    num_iter++;
+  
+  int indexpthread = ((rows+2) * (cols+2)) / num_thread;
+  int start;
+  int end;
+  struct arg_struct *args;
+  
+  args.current = current;
+  args.next = next;
+  args.tolerance = tolerance;
+  args.outF = outF;
+  
+  for (int i = 0; i < num_threads; i++){
+    start = i * indexpthread;
+    if (i < num_threads - 1)
+      end = (i + 1) * indexpthreads;
+    else
+      end = ((rows + 2) * (cols + 2));
+    args.rowend = end/cols;
+    args.colend = end%cols;
+    args.rowstart = start/cols;
+    args.colstart = start%cols;
+    pthread_create(&tid[i], NULL, compute, (void *)&args);
   }
+  
+  //Create threads running next gen and give them each a value 
+    /*  for (int j = 0; i < num_threads; i++){
+    pthread_create(&tid[i], NULL, compute, (void *)(current, next, &rowstart[i], &colstart[i], tolerance));
+    }*/
+  
+    //int num_iter = compute(current, next, rows, cols, tolerance, num_threads)
 
   /* Report */
-  printf ("Jacobi done, %d iterations, tolerance %.6f\n", num_iter, tolerance);
-  if (outF != stdout) {
-    fprintf (outF, "%d %d\n", rows, cols);
-  }
-  print_data(next, rows, cols, outF);
+
   
   return 0;
 
